@@ -1,0 +1,112 @@
+
+
+             startw  Ver.1.00  Copyright (C) 2005  K.Takata
+
+
+１．概要
+    　ファイルやコマンドの実行や、優先度の設定を行います。
+    　Windows 標準の start コマンドとほぼ同じ働きをします。異なる点は、
+    startw はコンソールプログラムではないという点です。そのため、startw
+    を実行しても、DOS 窓（コマンドプロンプト）が一瞬開くということがあり
+    ません。
+    　CD-ROM の autorun.inf に指定することで、CD-ROM の自動起動プログラ
+    ムとして使うこともできます。
+    　同種のソフトには、execute (*1) をはじめとして、多くのソフトが存在
+    しますが、startw は優先度の設定ができるという点が大きな特徴です。
+    　実行ファイルのサイズはわずか 2,560bytes と非常にコンパクトになって
+    います。
+
+    (*1) http://hp.vector.co.jp/authors/VA016050/download.html
+
+
+
+２．動作環境
+    ・Windows98/2000/XP など
+
+
+
+３．使用方法
+    　コマンドライン書式は以下のようになっています。
+
+        > startw [<option>] cmdline...
+         <option>
+          -d<path>     カレントディレクトリの指定
+          -min         最小化して起動
+          -max         最大化して起動
+          -realtime    優先度を REALTIME で起動
+          -high        優先度を HIGH で起動
+          -abovenormal 優先度を ABOVE_NORMAL で起動
+          -normal      優先度を NORMAL で起動
+          -belownormal 優先度を BELOW_NORMAL で起動
+          -low, -idle  優先度を IDLE で起動
+          -wait        起動したプログラムの終了を待つ
+
+    　オプションの大文字小文字は区別しません。
+
+    　Win9x では、-abovenormal, -belownormal は使用できません。
+
+    　NT 系では、タスクマネージャの「プロセス」タブでプロセスの優先度が
+    設定できますが、startw を使えば起動時に優先度を設定することができま
+    す。タスクマネージャでの指定と、startw による指定の対応関係は次のよ
+    うになっています。
+
+        リアルタイム    -realtime
+        高              -high
+        通常以上        -abovenormal
+        通常            -normal
+        通常以下        -belownormal
+        低              -low, -idle
+
+    　NT 系の start コマンドの /B, /I, /SEPARATE, /SHARED に相当する機能
+    や、タイトルを指定する機能は実装されていません。
+
+
+    使用例）
+      1. コマンドの実行例
+        > startw -high -dd:\ "C:\Program Files\Video\Caputure.exe"
+        　C:\Program Files\Video\Caputure.exe を優先度高、カレントディレ
+        クトリ d:\ で起動します。
+        　ビデオキャプチャソフトや、CD-R ライティングソフトなど特定のプ
+        ログラムを常に優先度高で起動したいというような場合には、それらの
+        プログラムを起動するショートカットを変更して、リンク先の先頭に
+        start -high を書き加えておくとよいでしょう。
+
+      2. 関連付けの実行例
+        > startw index.html
+        　index.html が、拡張子 .html に関連付けられたアプリで開かれます。
+
+      3. CD-ROM の自動実行の例
+        　以下の内容を autorun.inf という名前で保存し、CD-ROM の中に
+        autorun.inf, startw.exe, index.html を入れておくと、CD-ROM を挿
+        入したときに index.html が自動で開かれます。
+
+        [Autorun]
+        open=startw.exe index.html
+
+
+
+４．コンパイル
+    　コンパイラは VC++ 6.0 を利用しています。コマンドラインから
+      > nmake -f startw.mak
+    　とするとコンパイルできます。
+
+
+
+５．更新履歴
+    2005/04/01  Ver.1.00
+        ・最初の公開バージョン。
+
+
+
+６．注意事項、その他
+    ・このプログラムはフリーソフトウェアです。
+    ・このプログラムの著作権は作者である私 K.Takata（高田 謙）に帰属しま
+      す。
+    ・もしこのプログラムを使用することで何らかの問題が発生しても作者はい
+      っさいの責任を負いません。各自の責任で使用してください。
+    ・アーカイブを変更しない限り配布／転載は自由です。
+    ・ソースファイルの使用は非商用に限り自由です。
+
+        作者   : K.Takata（高田 謙）
+        URL    : http://webs.to/ken/
+                 http://homepage3.nifty.com/k-takata/
