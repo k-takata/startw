@@ -1,6 +1,6 @@
 
 
-             startw  Ver.1.00  Copyright (C) 2005  K.Takata
+             startw  Ver.1.01  Copyright (C) 2005  K.Takata
 
 
 １．概要
@@ -95,6 +95,9 @@
 ５．更新履歴
     2005/04/01  Ver.1.00
         ・最初の公開バージョン。
+
+    2005/04/04  Ver.1.01
+        ・細かい修正。
 
 
 

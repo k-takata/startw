@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.00   Copyright (C) 2005  K.Takata
+ * startw  Ver.1.01   Copyright (C) 2005  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -7,9 +7,13 @@
 #include <shellapi.h>
 #include <string.h>
 
+#define USE_STRING_API
+
+#ifdef USE_STRING_API
 #define strcpy			lstrcpy
 #define stricmp			lstrcmpi
 #define strncpy(d,s,l)	lstrcpyn((d), (s), (l) + 1)
+#endif /* USE_STRING_API */
 
 #ifndef BELOW_NORMAL_PRIORITY_CLASS
 #define BELOW_NORMAL_PRIORITY_CLASS		0x00004000
@@ -18,10 +22,10 @@
 
 #define PROGNAME	"startw"
 #define COPYRIGHT	\
-	PROGNAME##"  Ver.1.00   Copyright (C) 2005  K.Takata"
+	PROGNAME##"  Ver.1.01   Copyright (C) 2005  K.Takata"
 
 
-char *getargs(const char *cmdline, char *arg, int f_quote);
+char *getargs(const char *cmdline, char *arg, size_t size, int f_quote);
 void usage();
 
 
@@ -41,10 +45,10 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	STARTUPINFO si;
 	GetStartupInfo(&si);
 	
-	p = getargs(GetCommandLine(), NULL, 0);
+	p = getargs(GetCommandLine(), NULL, 0, 0);
 	while (p != NULL) {
 		char *opt = arg + 1;
-		q = getargs(p, arg, 0);
+		q = getargs(p, arg, sizeof(arg), 0);
 		if (arg[0] != '/' && arg[0] != '-') {
 			break;
 		}
@@ -72,7 +76,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			f_wait = 1;
 		} else if (opt[0] == 'd' || opt[0] == 'D') {
 			if (opt[1] == '\0') {
-				p = q = getargs(q, path, 0);
+				p = q = getargs(q, path, sizeof(path), 0);
 			} else {
 				strcpy(path, opt + 1);
 			}
@@ -162,7 +166,7 @@ void usage()
  * f_quote が 0 以外なら引用符('"', '\'')を含めてコピー。
  * 次の引数へのポインタを返す。次の引数がないときは NULL を返す。
  */
-char *getargs(const char *cmdline, char *arg, int f_quote)
+char *getargs(const char *cmdline, char *arg, size_t size, int f_quote)
 {
 	unsigned char *p = (unsigned char *) cmdline;
 	unsigned char *start, *end;
@@ -188,10 +192,14 @@ char *getargs(const char *cmdline, char *arg, int f_quote)
 			++p;
 		end = p;
 	}
-	if (arg != NULL) {
+	if (arg != NULL && size > 0) {
 		len = end - start;
+		if (len > size - 1)
+			len = size - 1;
 		strncpy(arg, (char *) start, len);
+#ifndef USE_STRING_API
 		arg[len] = '\0';
+#endif
 	}
 	while (*p && (*p <= ' '))
 		++p;
