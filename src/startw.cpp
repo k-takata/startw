@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.01   Copyright (C) 2005  K.Takata
+ * startw  Ver.1.02   Copyright (C) 2005  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -22,11 +22,12 @@
 
 #define PROGNAME	"startw"
 #define COPYRIGHT	\
-	PROGNAME##"  Ver.1.01   Copyright (C) 2005  K.Takata"
+	PROGNAME##"  Ver.1.02   Copyright (C) 2005  K.Takata"
 
 
 char *getargs(const char *cmdline, char *arg, size_t size, int f_quote);
 void usage();
+void ShowExitCode(HANDLE hProcess, const char *arg);
 
 
 /*
@@ -41,6 +42,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	DWORD dwCreationFlags = 0;
 	BOOL ret;
 	int f_wait = 0;
+	int f_exitcode = 0;
 	
 	STARTUPINFO si;
 	GetStartupInfo(&si);
@@ -73,6 +75,9 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			si.dwFlags |= STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_MAXIMIZE;
 		} else if (stricmp(opt, "wait") == 0) {
+			f_wait = 1;
+		} else if (stricmp(opt, "z") == 0) {
+			f_exitcode = 1;
 			f_wait = 1;
 		} else if (opt[0] == 'd' || opt[0] == 'D') {
 			if (opt[1] == '\0') {
@@ -112,11 +117,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 //	sei.lpVerb = "open";
 	sei.lpFile = arg;
 	sei.lpParameters = q;
-	if (si.dwFlags & STARTF_USESHOWWINDOW) {
-		sei.nShow = si.wShowWindow;
-	} else {
-		sei.nShow = SW_SHOWDEFAULT;
-	}
+	sei.nShow = (si.dwFlags & STARTF_USESHOWWINDOW)
+			? si.wShowWindow : SW_SHOWDEFAULT;
 	if (path[0] != '\0') {
 		sei.lpDirectory = path;
 	}
@@ -126,11 +128,25 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		SetPriorityClass(sei.hProcess, dwCreationFlags);
 		if (f_wait) {
 			WaitForSingleObject(sei.hProcess, INFINITE);
+			if (f_exitcode) {
+				ShowExitCode(sei.hProcess, arg);
+			}
 		}
 		CloseHandle(sei.hProcess);
 	}
 #endif
 	return 0;
+}
+
+void ShowExitCode(HANDLE hProcess, const char *arg)
+{
+	char buf[128];
+	DWORD exit;
+	
+	if (GetExitCodeProcess(hProcess, &exit)) {
+		wsprintf(buf, "ExitCode: %d", exit);
+		MessageBox(NULL, buf, arg, MB_OK);
+	}
 }
 
 
@@ -153,6 +169,7 @@ void usage()
 		"  -belownormal Start app in the BELOW_NORMAL priority class\n"
 		"  -low, -idle  Start app in the IDLE priority class\n"
 		"  -wait        Start app and wait for it to end\n"
+		"  -z           Show the exit code\n"
 		;
 	
 	MessageBox(NULL, msg, PROGNAME, MB_OK);
