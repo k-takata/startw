@@ -1,6 +1,6 @@
 
 
-             startw  Ver.1.02  Copyright (C) 2005  K.Takata
+             startw  Ver.1.03  Copyright (C) 2005  K.Takata
 
 
 １．概要
@@ -33,6 +33,7 @@
           -d<path>     カレントディレクトリの指定
           -min         最小化して起動
           -max         最大化して起動
+          -hide        ウィンドウを隠して起動
           -realtime    優先度を REALTIME で起動
           -high        優先度を HIGH で起動
           -abovenormal 優先度を ABOVE_NORMAL で起動
@@ -102,6 +103,9 @@
 
     2005/04/05  Ver.1.02
         ・終了コードを表示できるようにした。
+
+    2005/04/08  Ver.1.03
+        ・-hide オプションを追加。
 
 
 

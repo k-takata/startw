@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.02   Copyright (C) 2005  K.Takata
+ * startw  Ver.1.03   Copyright (C) 2005  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -22,7 +22,7 @@
 
 #define PROGNAME	"startw"
 #define COPYRIGHT	\
-	PROGNAME##"  Ver.1.02   Copyright (C) 2005  K.Takata"
+	PROGNAME##"  Ver.1.03   Copyright (C) 2005  K.Takata"
 
 
 char *getargs(const char *cmdline, char *arg, size_t size, int f_quote);
@@ -36,8 +36,8 @@ void ShowExitCode(HANDLE hProcess, const char *arg);
 int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		LPSTR lpCmdLine, int iCmdShow)
 {
-	char *p, *q;
-	char path[MAX_PATH] = "";
+	char *p, *q, *path = NULL;
+	char buf[MAX_PATH];
 	char arg[MAX_PATH];
 	DWORD dwCreationFlags = 0;
 	BOOL ret;
@@ -74,6 +74,9 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		} else if (stricmp(opt, "max") == 0) {
 			si.dwFlags |= STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_MAXIMIZE;
+		} else if (stricmp(opt, "hide") == 0) {
+			si.dwFlags |= STARTF_USESHOWWINDOW;
+			si.wShowWindow = SW_HIDE;
 		} else if (stricmp(opt, "wait") == 0) {
 			f_wait = 1;
 		} else if (stricmp(opt, "z") == 0) {
@@ -81,10 +84,11 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			f_wait = 1;
 		} else if (opt[0] == 'd' || opt[0] == 'D') {
 			if (opt[1] == '\0') {
-				p = q = getargs(q, path, sizeof(path), 0);
+				p = q = getargs(q, buf, sizeof(buf), 0);
 			} else {
-				strcpy(path, opt + 1);
+				strcpy(buf, opt + 1);
 			}
+			path = buf;
 		} else if (opt[0] == 'h' || opt[0] == 'H' || opt[0] == '?') {
 			p = NULL;
 			break;
@@ -98,12 +102,8 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	
 #ifdef USE_CREATEPROCESS
 	PROCESS_INFORMATION pi;
-	char *dir = NULL;
-	if (path[0] != '\0') {
-		dir = path;
-	}
 	ret = CreateProcess(NULL, p, NULL, NULL, FALSE, dwCreationFlags,
-			NULL, dir, &si, &pi);
+			NULL, path, &si, &pi);
 	if (f_wait) {
 		WaitForSingleObject(pi.hProcess, INFINITE);
 	}
@@ -119,9 +119,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	sei.lpParameters = q;
 	sei.nShow = (si.dwFlags & STARTF_USESHOWWINDOW)
 			? si.wShowWindow : SW_SHOWDEFAULT;
-	if (path[0] != '\0') {
-		sei.lpDirectory = path;
-	}
+	sei.lpDirectory = path;
 	ret = ShellExecuteEx(&sei);
 	
 	if (ret && (sei.hProcess != NULL)) {
@@ -162,6 +160,7 @@ void usage()
 		"  -d<path>     Starting directory\n"
 		"  -min         Start window minimized\n"
 		"  -max         Start window maximized\n"
+		"  -hide        Start window hidden\n"
 		"  -realtime    Start app in the REALTIME priority class\n"
 		"  -high        Start app in the HIGH priority class\n"
 		"  -abovenormal Start app in the ABOVE_NORMAL priority class\n"
