@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.03   Copyright (C) 2005  K.Takata
+ * startw  Ver.1.04   Copyright (C) 2005  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -22,12 +22,12 @@
 
 #define PROGNAME	"startw"
 #define COPYRIGHT	\
-	PROGNAME##"  Ver.1.03   Copyright (C) 2005  K.Takata"
+	PROGNAME##"  Ver.1.04   Copyright (C) 2005  K.Takata"
 
 
 char *getargs(const char *cmdline, char *arg, size_t size, int f_quote);
 void usage();
-void ShowExitCode(HANDLE hProcess, const char *arg);
+int ShowExitCode(HANDLE hProcess, const char *arg, int f_show);
 
 
 /*
@@ -43,6 +43,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	BOOL ret;
 	int f_wait = 0;
 	int f_exitcode = 0;
+	int exitcode = 0;
 	
 	STARTUPINFO si;
 	GetStartupInfo(&si);
@@ -104,10 +105,12 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	PROCESS_INFORMATION pi;
 	ret = CreateProcess(NULL, p, NULL, NULL, FALSE, dwCreationFlags,
 			NULL, path, &si, &pi);
-	if (f_wait) {
-		WaitForSingleObject(pi.hProcess, INFINITE);
-	}
 	if (ret) {
+		SetPriorityClass(pi.hProcess, dwCreationFlags);
+		if (f_wait) {
+			WaitForSingleObject(pi.hProcess, INFINITE);
+			exitcode = ShowExitCode(pi.hProcess, arg, f_exitcode);
+		}
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	}
@@ -126,25 +129,24 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		SetPriorityClass(sei.hProcess, dwCreationFlags);
 		if (f_wait) {
 			WaitForSingleObject(sei.hProcess, INFINITE);
-			if (f_exitcode) {
-				ShowExitCode(sei.hProcess, arg);
-			}
+			exitcode = ShowExitCode(sei.hProcess, arg, f_exitcode);
 		}
 		CloseHandle(sei.hProcess);
 	}
 #endif
-	return 0;
+	return exitcode;
 }
 
-void ShowExitCode(HANDLE hProcess, const char *arg)
+int ShowExitCode(HANDLE hProcess, const char *arg, int f_show)
 {
 	char buf[128];
-	DWORD exit;
+	DWORD exit = 0;
 	
-	if (GetExitCodeProcess(hProcess, &exit)) {
+	if (GetExitCodeProcess(hProcess, &exit) && f_show) {
 		wsprintf(buf, "ExitCode: %d", exit);
 		MessageBox(NULL, buf, arg, MB_OK);
 	}
+	return exit;
 }
 
 
