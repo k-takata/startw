@@ -1,18 +1,22 @@
 /*
- * startw  Ver.1.04   Copyright (C) 2005  K.Takata
+ * startw  Ver.1.05   Copyright (C) 2005-2007  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
 #include <string.h>
+#include <tchar.h>
 
 #define USE_STRING_API
 
 #ifdef USE_STRING_API
-#define strcpy			lstrcpy
-#define stricmp			lstrcmpi
-#define strncpy(d,s,l)	lstrcpyn((d), (s), (l) + 1)
+#undef _tcscpy
+#undef _tcsicmp
+#undef _tcsncpy
+#define _tcscpy			lstrcpy
+#define _tcsicmp		lstrcmpi
+#define _tcsncpy(d,s,l)	lstrcpyn((d), (s), (l) + 1)
 #endif /* USE_STRING_API */
 
 #ifndef BELOW_NORMAL_PRIORITY_CLASS
@@ -20,14 +24,14 @@
 #define ABOVE_NORMAL_PRIORITY_CLASS		0x00008000
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
-#define PROGNAME	"startw"
-#define COPYRIGHT	\
-	PROGNAME##"  Ver.1.04   Copyright (C) 2005  K.Takata"
+#define PROGNAME	_T("startw")
+#define COPYRIGHT_	_T("  Ver.1.05   Copyright (C) 2005-2007  K.Takata")
+#define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
-char *getargs(const char *cmdline, char *arg, size_t size, int f_quote);
+LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote);
 void usage();
-int ShowExitCode(HANDLE hProcess, const char *arg, int f_show);
+int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show);
 
 
 /*
@@ -36,61 +40,67 @@ int ShowExitCode(HANDLE hProcess, const char *arg, int f_show);
 int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		LPSTR lpCmdLine, int iCmdShow)
 {
-	char *p, *q, *path = NULL;
-	char buf[MAX_PATH];
-	char arg[MAX_PATH];
+	LPTSTR p, q, path = NULL;
+	TCHAR buf[MAX_PATH];
+	TCHAR arg[MAX_PATH];
 	DWORD dwCreationFlags = 0;
 	BOOL ret;
 	int f_wait = 0;
 	int f_exitcode = 0;
 	int exitcode = 0;
+	int f_admin = 0;
 	
 	STARTUPINFO si;
 	GetStartupInfo(&si);
 	
 	p = getargs(GetCommandLine(), NULL, 0, 0);
 	while (p != NULL) {
-		char *opt = arg + 1;
+		LPTSTR opt = arg + 1;
 		q = getargs(p, arg, sizeof(arg), 0);
-		if (arg[0] != '/' && arg[0] != '-') {
+		if (arg[0] != _T('/') && arg[0] != _T('-')) {
 			break;
 		}
 		p = q;
 		
-		if (stricmp(opt, "realtime") == 0) {
+		if (_tcsicmp(opt, _T("realtime")) == 0) {
 			dwCreationFlags = REALTIME_PRIORITY_CLASS;
-		} else if (stricmp(opt, "high") == 0) {
+		} else if (_tcsicmp(opt, _T("high")) == 0) {
 			dwCreationFlags = HIGH_PRIORITY_CLASS;
-		} else if (stricmp(opt, "abovenormal") == 0) {
+		} else if (_tcsicmp(opt, _T("abovenormal")) == 0) {
 			dwCreationFlags = ABOVE_NORMAL_PRIORITY_CLASS;
-		} else if (stricmp(opt, "belownormal") == 0) {
+		} else if (_tcsicmp(opt, _T("belownormal")) == 0) {
 			dwCreationFlags = BELOW_NORMAL_PRIORITY_CLASS;
-		} else if (stricmp(opt, "normal") == 0) {
+		} else if (_tcsicmp(opt, _T("normal")) == 0) {
 			dwCreationFlags = NORMAL_PRIORITY_CLASS;
-		} else if (stricmp(opt, "low") == 0 || stricmp(opt, "idle") == 0) {
+		} else if (_tcsicmp(opt, _T("low")) == 0
+				|| _tcsicmp(opt, _T("idle")) == 0) {
 			dwCreationFlags = IDLE_PRIORITY_CLASS;
-		} else if (stricmp(opt, "min") == 0) {
+		} else if (_tcsicmp(opt, _T("min")) == 0) {
 			si.dwFlags |= STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_MINIMIZE;
-		} else if (stricmp(opt, "max") == 0) {
+		} else if (_tcsicmp(opt, _T("max")) == 0) {
 			si.dwFlags |= STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_MAXIMIZE;
-		} else if (stricmp(opt, "hide") == 0) {
+		} else if (_tcsicmp(opt, _T("hide")) == 0) {
 			si.dwFlags |= STARTF_USESHOWWINDOW;
 			si.wShowWindow = SW_HIDE;
-		} else if (stricmp(opt, "wait") == 0) {
+		} else if (_tcsicmp(opt, _T("wait")) == 0) {
 			f_wait = 1;
-		} else if (stricmp(opt, "z") == 0) {
+		} else if (_tcsicmp(opt, _T("admin")) == 0
+				|| _tcsicmp(opt, _T("runas")) == 0) {
+			f_admin = 1;
+		} else if (_tcsicmp(opt, _T("z")) == 0) {
 			f_exitcode = 1;
 			f_wait = 1;
-		} else if (opt[0] == 'd' || opt[0] == 'D') {
-			if (opt[1] == '\0') {
+		} else if (opt[0] == _T('d') || opt[0] == _T('D')) {
+			if (opt[1] == _T('\0')) {
 				p = q = getargs(q, buf, sizeof(buf), 0);
 			} else {
-				strcpy(buf, opt + 1);
+				_tcscpy(buf, opt + 1);
 			}
 			path = buf;
-		} else if (opt[0] == 'h' || opt[0] == 'H' || opt[0] == '?') {
+		} else if (opt[0] == _T('h') || opt[0] == _T('H')
+				|| opt[0] == _T('?')) {
 			p = NULL;
 			break;
 		}
@@ -117,7 +127,10 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 #else
 	SHELLEXECUTEINFO sei = {sizeof(SHELLEXECUTEINFO)};
 	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-//	sei.lpVerb = "open";
+//	sei.lpVerb = _T("open");
+	if (f_admin) {
+		sei.lpVerb = _T("runas");
+	}
 	sei.lpFile = arg;
 	sei.lpParameters = q;
 	sei.nShow = (si.dwFlags & STARTF_USESHOWWINDOW)
@@ -137,13 +150,13 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	return exitcode;
 }
 
-int ShowExitCode(HANDLE hProcess, const char *arg, int f_show)
+int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show)
 {
-	char buf[128];
+	TCHAR buf[128];
 	DWORD exit = 0;
 	
 	if (GetExitCodeProcess(hProcess, &exit) && f_show) {
-		wsprintf(buf, "ExitCode: %d", exit);
+		wsprintf(buf, _T("ExitCode: %d"), exit);
 		MessageBox(NULL, buf, arg, MB_OK);
 	}
 	return exit;
@@ -155,22 +168,23 @@ int ShowExitCode(HANDLE hProcess, const char *arg, int f_show)
  */
 void usage()
 {
-	char *msg =
-		COPYRIGHT "\n\n"
-		"usage: " PROGNAME " [<option>] cmdline...\n"
-		" <option>\n"
-		"  -d<path>     Starting directory\n"
-		"  -min         Start window minimized\n"
-		"  -max         Start window maximized\n"
-		"  -hide        Start window hidden\n"
-		"  -realtime    Start app in the REALTIME priority class\n"
-		"  -high        Start app in the HIGH priority class\n"
-		"  -abovenormal Start app in the ABOVE_NORMAL priority class\n"
-		"  -normal      Start app in the NORMAL priority class\n"
-		"  -belownormal Start app in the BELOW_NORMAL priority class\n"
-		"  -low, -idle  Start app in the IDLE priority class\n"
-		"  -wait        Start app and wait for it to end\n"
-		"  -z           Show the exit code\n"
+	LPTSTR msg =
+		COPYRIGHT _T("\n\n")
+		_T("usage: ") PROGNAME _T(" [<option>] cmdline...\n")
+		_T(" <option>\n")
+		_T("  -d<path>     Starting directory\n")
+		_T("  -min         Start window minimized\n")
+		_T("  -max         Start window maximized\n")
+		_T("  -hide        Start window hidden\n")
+		_T("  -realtime    Start app in the REALTIME priority class\n")
+		_T("  -high        Start app in the HIGH priority class\n")
+		_T("  -abovenormal Start app in the ABOVE_NORMAL priority class\n")
+		_T("  -normal      Start app in the NORMAL priority class\n")
+		_T("  -belownormal Start app in the BELOW_NORMAL priority class\n")
+		_T("  -low, -idle  Start app in the IDLE priority class\n")
+		_T("  -wait        Start app and wait for it to end\n")
+		_T("  -z           Show the exit code\n")
+		_T("  -admin       Start app as an administrator\n")
 		;
 	
 	MessageBox(NULL, msg, PROGNAME, MB_OK);
@@ -184,15 +198,15 @@ void usage()
  * f_quote が 0 以外なら引用符('"', '\'')を含めてコピー。
  * 次の引数へのポインタを返す。次の引数がないときは NULL を返す。
  */
-char *getargs(const char *cmdline, char *arg, size_t size, int f_quote)
+LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote)
 {
-	unsigned char *p = (unsigned char *) cmdline;
-	unsigned char *start, *end;
-	unsigned char quote;
+	PTBYTE p = (PTBYTE) cmdline;
+	PTBYTE start, end;
+	TBYTE quote;
 	size_t len;
 	
 	start = p;
-	if (*p == '"' || *p == '\'') {
+	if (*p == _T('"') || *p == _T('\'')) {
 		quote = *p;
 		++p;
 		if (!f_quote)
@@ -206,7 +220,7 @@ char *getargs(const char *cmdline, char *arg, size_t size, int f_quote)
 				end = p;
 		}
 	} else {
-		while (*p > ' ')
+		while (*p > _T(' '))
 			++p;
 		end = p;
 	}
@@ -214,14 +228,14 @@ char *getargs(const char *cmdline, char *arg, size_t size, int f_quote)
 		len = end - start;
 		if (len > size - 1)
 			len = size - 1;
-		strncpy(arg, (char *) start, len);
+		_tcsncpy(arg, (LPTSTR) start, len);
 #ifndef USE_STRING_API
-		arg[len] = '\0';
+		arg[len] = _T('\0');
 #endif
 	}
-	while (*p && (*p <= ' '))
+	while (*p && (*p <= _T(' ')))
 		++p;
-	if (*p == '\0')
+	if (*p == _T('\0'))
 		return NULL;
-	return (char *) p;
+	return (LPTSTR) p;
 }

@@ -8,6 +8,10 @@ CFLAGS = /O1 /W3
 CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
 
+!ifdef UNICODE
+CPPFLAGS = $(CPPFLAGS) /DUNICODE /D_UNICODE
+!endif
+
 
 objs = startw.obj tnywmain.obj
 
