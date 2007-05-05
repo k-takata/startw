@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.05   Copyright (C) 2005-2007  K.Takata
+ * startw  Ver.1.06   Copyright (C) 2005-2007  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -25,13 +25,14 @@
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
 #define PROGNAME	_T("startw")
-#define COPYRIGHT_	_T("  Ver.1.05   Copyright (C) 2005-2007  K.Takata")
+#define COPYRIGHT_	_T("  Ver.1.06   Copyright (C) 2005-2007  K.Takata")
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
 LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote);
 void usage();
 int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show);
+BOOL IsUserAdmin();
 
 
 /*
@@ -49,6 +50,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	int f_exitcode = 0;
 	int exitcode = 0;
 	int f_admin = 0;
+	int f_runas = 0;
 	
 	STARTUPINFO si;
 	GetStartupInfo(&si);
@@ -86,9 +88,10 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			si.wShowWindow = SW_HIDE;
 		} else if (_tcsicmp(opt, _T("wait")) == 0) {
 			f_wait = 1;
-		} else if (_tcsicmp(opt, _T("admin")) == 0
-				|| _tcsicmp(opt, _T("runas")) == 0) {
+		} else if (_tcsicmp(opt, _T("admin")) == 0) {
 			f_admin = 1;
+		} else if (_tcsicmp(opt, _T("runas")) == 0) {
+			f_runas = 1;
 		} else if (_tcsicmp(opt, _T("z")) == 0) {
 			f_exitcode = 1;
 			f_wait = 1;
@@ -128,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	SHELLEXECUTEINFO sei = {sizeof(SHELLEXECUTEINFO)};
 	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
 //	sei.lpVerb = _T("open");
-	if (f_admin) {
+	if (f_runas || (f_admin && !IsUserAdmin())) {
 		sei.lpVerb = _T("runas");
 	}
 	sei.lpFile = arg;
@@ -238,4 +241,24 @@ LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote)
 	if (*p == _T('\0'))
 		return NULL;
 	return (LPTSTR) p;
+}
+
+
+typedef BOOL (WINAPI *pfnIsUserAnAdmin)(void);
+
+BOOL IsUserAdmin()
+{
+//	HMODULE hShell32 = LoadLibrary(_T("shell32.dll"));
+	HMODULE hShell32 = GetModuleHandle(_T("shell32.dll"));
+	if (hShell32 == NULL) {
+		return TRUE;
+	}
+	BOOL fIsAdmin = TRUE;
+	pfnIsUserAnAdmin pIsUserAnAdmin = (pfnIsUserAnAdmin)
+			GetProcAddress(hShell32, (LPCSTR) 680);
+	if (pIsUserAnAdmin != NULL) {
+		fIsAdmin = pIsUserAnAdmin();
+	}
+//	FreeLibrary(hShell32);
+	return fIsAdmin;
 }
