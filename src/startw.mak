@@ -4,32 +4,38 @@
 
 CC = cl /nologo
 CPP = $(CC)
-CFLAGS = /O1 /W3
-CPPFLAGS = $(CFLAGS)
+CFLAGS = /O1 /W3 /GF
+CPPFLAGS = $(CFLAGS) /MD
 LINK = link /nologo
-
-!ifdef UNICODE
-CPPFLAGS = $(CPPFLAGS) /DUNICODE /D_UNICODE
-!endif
 
 
 objs = startw.obj tnywmain.obj
+objsw = startww.obj tnywmainw.obj
 
-all : startw.exe
+all : startw.exe startw9x.exe
 
-startw.exe : $(objs)
-	$(LINK) $** kernel32.lib user32.lib shell32.lib /out:$@ /opt:nowin98 /merge:.data=.text /merge:.rdata=.text /section:.text,erw
+startw.exe : $(objsw)
+	$(LINK) $** kernel32.lib user32.lib shell32.lib /out:$@ /opt:nowin98 /merge:.rdata=.text
+
+startw9x.exe : $(objs)
+	$(LINK) $** kernel32.lib user32.lib shell32.lib /out:$@ /opt:nowin98 /merge:.rdata=.text
+
 
 startw.obj : startw.cpp
+
+startww.obj : startw.cpp
+	$(CC) /Fo$@ $(CPPFLAGS) /DUNICODE /D_UNICODE /c startw.cpp
 
 
 # /Zl : NODEFAULTLIB
 tnywmain.obj : tnywmain.c
 	$(CC) $(CFLAGS) /Zl /c $*.c
 
+tnywmainw.obj : tnywmain.c
+	$(CC) /Fo$@ $(CFLAGS) /DUNICODE /D_UNICODE /Zl /c tnywmain.c
 
 
 clean :
-	del $(objs)
-	del startw.exe
+	del $(objs) $(objsw)
+	del startw.exe startw9x.exe
 

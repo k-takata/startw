@@ -1,6 +1,6 @@
 
 
-          startw  Ver.1.05  Copyright (C) 2005-2007  K.Takata
+          startw  Ver.1.07  Copyright (C) 2005-2011  K.Takata
 
 
 １．概要
@@ -23,7 +23,12 @@
 
 
 ２．動作環境
-    ・Windows98/2000/XP/Vista など
+    ・startw.exe (Unicode 版)
+        ・Windows2000/XP/Vista/7 など
+
+    ・startw9x.exe (ANSI 版)
+        適宜実行ファイル名を startw.exe にリネームしてお使いください。
+        ・Windows98/2000/XP/Vista/7 など
 
 
 
@@ -32,19 +37,20 @@
 
         > startw [<option>] cmdline...
          <option>
-          -d<path>     カレントディレクトリの指定
-          -min         最小化して起動
-          -max         最大化して起動
-          -hide        ウィンドウを隠して起動
-          -realtime    優先度を REALTIME で起動
-          -high        優先度を HIGH で起動
-          -abovenormal 優先度を ABOVE_NORMAL で起動
-          -normal      優先度を NORMAL で起動
-          -belownormal 優先度を BELOW_NORMAL で起動
-          -low, -idle  優先度を IDLE で起動
-          -wait        起動したプログラムの終了を待つ
-          -z           起動したプログラムの終了コードを表示する
-          -admin       管理者権限で起動
+          -d<path>      カレントディレクトリの指定
+          -min          最小化して起動
+          -max          最大化して起動
+          -hide         ウィンドウを隠して起動
+          -realtime     優先度を REALTIME で起動
+          -high         優先度を HIGH で起動
+          -abovenormal  優先度を ABOVE_NORMAL で起動
+          -normal       優先度を NORMAL で起動
+          -belownormal  優先度を BELOW_NORMAL で起動
+          -low, -idle   優先度を IDLE で起動
+          -wait         起動したプログラムの終了を待つ
+          -z            起動したプログラムの終了コードを表示する
+          -admin        管理者権限で起動
+          -affinity <n> プロセスアフィニティマスクを設定する
 
     　オプションの大文字小文字は区別しません。
 
@@ -110,11 +116,6 @@
       > nmake -f startw.mak
     　とするとコンパイルできます。
 
-      > nmake -f startw.mak UNICODE=1
-    　というように、UNICODE=1 を指定してコンパイルすると、Unicode 対応プ
-    ログラムとしてコンパイルされ、コマンドラインに Unicode が指定できる
-    ようになります。（同梱の startw.exe は Unicode 対応ではありません。）
-
 
 
 ５．更新履歴
@@ -143,6 +144,11 @@
         ・2k/XP などで、既に管理者権限がある場合、-admin オプションを指
           定しても、「別のユーザーとして実行」ダイアログを表示しないよう
           に変更。
+
+    2011/05/28  Ver.1.07
+        ・Unicode 版の実行ファイルを用意。
+        ・Unicode 版でプロセスアフィニティマスクを設定できるように変更。
+        ・avast! 6.0 が、安全でないアプリとして警告を出すのに対処した。
 
 
 

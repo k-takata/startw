@@ -1,12 +1,17 @@
 /*
- * startw  Ver.1.06   Copyright (C) 2005-2007  K.Takata
+ * startw  Ver.1.07   Copyright (C) 2005-2011  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
 #include <string.h>
+#include <stdlib.h>
 #include <tchar.h>
+
+#ifndef lengthof
+#define lengthof(arr)	(sizeof(arr) / sizeof((arr)[0]))
+#endif
 
 #define USE_STRING_API
 
@@ -24,8 +29,8 @@
 #define ABOVE_NORMAL_PRIORITY_CLASS		0x00008000
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
-#define PROGNAME	_T("startw")
-#define COPYRIGHT_	_T("  Ver.1.06   Copyright (C) 2005-2007  K.Takata")
+#define PROGNAME	"startw"
+#define COPYRIGHT_	"  Ver.1.07   Copyright (C) 2005-2011  K.Takata"
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
@@ -38,13 +43,14 @@ BOOL IsUserAdmin();
 /*
  * WinMain
  */
-int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
+int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		LPSTR lpCmdLine, int iCmdShow)
 {
 	LPTSTR p, q, path = NULL;
 	TCHAR buf[MAX_PATH];
 	TCHAR arg[MAX_PATH];
 	DWORD dwCreationFlags = 0;
+	DWORD dwAffinity = 0;
 	BOOL ret;
 	int f_wait = 0;
 	int f_exitcode = 0;
@@ -58,7 +64,7 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	p = getargs(GetCommandLine(), NULL, 0, 0);
 	while (p != NULL) {
 		LPTSTR opt = arg + 1;
-		q = getargs(p, arg, sizeof(arg), 0);
+		q = getargs(p, arg, lengthof(arg), 0);
 		if (arg[0] != _T('/') && arg[0] != _T('-')) {
 			break;
 		}
@@ -95,9 +101,14 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		} else if (_tcsicmp(opt, _T("z")) == 0) {
 			f_exitcode = 1;
 			f_wait = 1;
+#ifdef UNICODE
+		} else if (_tcsicmp(opt, _T("affinity")) == 0) {
+			p = q = getargs(q, NULL, 0, 0);
+			dwAffinity = _tcstoul(p, NULL, 0);
+#endif
 		} else if (opt[0] == _T('d') || opt[0] == _T('D')) {
 			if (opt[1] == _T('\0')) {
-				p = q = getargs(q, buf, sizeof(buf), 0);
+				p = q = getargs(q, buf, lengthof(buf), 0);
 			} else {
 				_tcscpy(buf, opt + 1);
 			}
@@ -120,6 +131,9 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			NULL, path, &si, &pi);
 	if (ret) {
 		SetPriorityClass(pi.hProcess, dwCreationFlags);
+		if (dwAffinity != 0) {
+			SetProcessAffinityMask(sei.hProcess, dwAffinity);
+		}
 		if (f_wait) {
 			WaitForSingleObject(pi.hProcess, INFINITE);
 			exitcode = ShowExitCode(pi.hProcess, arg, f_exitcode);
@@ -143,6 +157,11 @@ int WINAPI WinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	
 	if (ret && (sei.hProcess != NULL)) {
 		SetPriorityClass(sei.hProcess, dwCreationFlags);
+#ifdef UNICODE
+		if (dwAffinity != 0) {
+			SetProcessAffinityMask(sei.hProcess, dwAffinity);
+		}
+#endif
 		if (f_wait) {
 			WaitForSingleObject(sei.hProcess, INFINITE);
 			exitcode = ShowExitCode(sei.hProcess, arg, f_exitcode);
@@ -171,26 +190,30 @@ int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show)
  */
 void usage()
 {
-	LPTSTR msg =
-		COPYRIGHT _T("\n\n")
-		_T("usage: ") PROGNAME _T(" [<option>] cmdline...\n")
-		_T(" <option>\n")
-		_T("  -d<path>     Starting directory\n")
-		_T("  -min         Start window minimized\n")
-		_T("  -max         Start window maximized\n")
-		_T("  -hide        Start window hidden\n")
-		_T("  -realtime    Start app in the REALTIME priority class\n")
-		_T("  -high        Start app in the HIGH priority class\n")
-		_T("  -abovenormal Start app in the ABOVE_NORMAL priority class\n")
-		_T("  -normal      Start app in the NORMAL priority class\n")
-		_T("  -belownormal Start app in the BELOW_NORMAL priority class\n")
-		_T("  -low, -idle  Start app in the IDLE priority class\n")
-		_T("  -wait        Start app and wait for it to end\n")
-		_T("  -z           Show the exit code\n")
-		_T("  -admin       Start app as an administrator\n")
+	// use ANSI string to reduce the program size
+	LPSTR msg =
+		COPYRIGHT "\n\n"
+		"usage: " PROGNAME " [<option>] cmdline...\n"
+		" <option>\n"
+		"  -d<path>\t\tStarting directory\n"
+		"  -min\t\tStart window minimized\n"
+		"  -max\t\tStart window maximized\n"
+		"  -hide\t\tStart window hidden\n"
+		"  -realtime\t\tStart app in the REALTIME priority class\n"
+		"  -high\t\tStart app in the HIGH priority class\n"
+		"  -abovenormal\tStart app in the ABOVE_NORMAL priority class\n"
+		"  -normal\t\tStart app in the NORMAL priority class\n"
+		"  -belownormal\tStart app in the BELOW_NORMAL priority class\n"
+		"  -low, -idle\tStart app in the IDLE priority class\n"
+		"  -wait\t\tStart app and wait for it to end\n"
+		"  -z\t\tShow the exit code\n"
+		"  -admin\t\tStart app as an administrator\n"
+#ifdef UNICODE
+		"  -affinity <n>\tSet the process affinity mask\n"
+#endif
 		;
 	
-	MessageBox(NULL, msg, PROGNAME, MB_OK);
+	MessageBoxA(NULL, msg, PROGNAME, MB_OK);
 }
 
 

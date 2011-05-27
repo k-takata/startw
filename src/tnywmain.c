@@ -6,8 +6,9 @@
 #define NOGDI
 #define NOIME
 #include <windows.h>
+#include <tchar.h>
 
-#ifdef USE_CMDSHOW
+#if defined(USE_CMDSHOW) || defined(_WIN64)
 #define NAKED
 #else
 // note: compile option /O1 or /O2 is needed
@@ -16,12 +17,23 @@
 
 extern int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 		LPSTR lpCmdLine, int nCmdShow);
+extern int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+		LPWSTR lpCmdLine, int nCmdShow);
 
-NAKED void /*__cdecl*/ WinMainCRTStartup(void)
+#ifdef UNICODE
+#define _tWinMainCRTStartup wWinMainCRTStartup
+#else
+#define _tWinMainCRTStartup WinMainCRTStartup
+#endif
+
+NAKED void _tWinMainCRTStartup(void)
 {
+#ifdef USE_CMDLINE
+	TBYTE *lpszCommandLine;	// must be unsigned for multibyte strings
+#endif
 	LPTSTR cmdline;
-	unsigned char *lpszCommandLine;	// must be unsigned for multibyte strings
 	int cmdshow;
+	HANDLE hModule;
 	
 #ifdef USE_CMDSHOW
 	STARTUPINFO si;
@@ -64,5 +76,10 @@ NAKED void /*__cdecl*/ WinMainCRTStartup(void)
 	cmdline = NULL;
 #endif
 	
-	ExitProcess(WinMain(GetModuleHandle(NULL), NULL, cmdline, cmdshow));
+#ifdef USE_MODULEHANDLE
+	hModule = GetModuleHandle(NULL);
+#else
+	hModule = NULL;
+#endif
+	ExitProcess(_tWinMain(hModule, NULL, cmdline, cmdshow));
 }
