@@ -1,6 +1,6 @@
 
 
-          startw  Ver.1.07  Copyright (C) 2005-2011  K.Takata
+          startw  Ver.1.08  Copyright (C) 2005-2011  K.Takata
 
 
 １．概要
@@ -12,9 +12,9 @@
     　CD-ROM の autorun.inf に指定することで、CD-ROM の自動起動プログラ
     ムとして使うこともできます。
     　同種のソフトには、execute (*1), shexe (*2) をはじめとして、多くの
-    ソフトが存在しますが、startw は優先度の設定ができるという点が大きな
-    特徴です。
-    　実行ファイルのサイズはわずか 3,072bytes と非常にコンパクトになって
+    ソフトが存在しますが、startw は優先度や環境変数の設定ができるという
+    点が大きな特徴です。
+    　実行ファイルのサイズはわずか 3,584bytes と非常にコンパクトになって
     います。
 
     (*1) http://hp.vector.co.jp/authors/VA016050/download.html
@@ -35,7 +35,7 @@
 ３．使用方法
     　コマンドライン書式は以下のようになっています。
 
-        > startw [<option>] cmdline...
+        > startw [<option>] [<envname>=<value>] cmdline...
          <option>
           -d<path>      カレントディレクトリの指定
           -min          最小化して起動
@@ -54,7 +54,8 @@
 
     　オプションの大文字小文字は区別しません。
 
-    　Win9x では、-abovenormal, -belownormal, -admin は使用できません。
+    　Win9x では、-abovenormal, -belownormal, -admin, -affinity は使用で
+    きません。
 
     　NT 系では、タスクマネージャの「プロセス」タブでプロセスの優先度が
     設定できますが、startw を使えば起動時に優先度を設定することができま
@@ -80,14 +81,21 @@
     確認のダイアログが表示され、管理者権限でプログラムを実行できます。
     2k/XP などでは、「別のユーザーとして実行」ダイアログが表示されます。
 
+    　<envname>=<value> を指定すると、<envname> という名前の環境変数に
+    <value> という値を設定します。<value> に空白を含む場合は、
+    <envname>=<value> 自体をダブルクォーテーションマークまたはシングルク
+    ォーテーションマークでくくってください。なお、現在のバージョンでは
+    "" の中に " を含むことや、'' の中に ' を含むことはできません。また
+    <value> のみをくくることはできません。
+
     　NT 系の start コマンドの /B, /I, /SEPARATE, /SHARED に相当する機能
     や、タイトルを指定する機能は実装されていません。
 
 
     使用例）
       1. コマンドの実行例
-        > startw -high -dd:\ "C:\Program Files\Video\Caputure.exe"
-        　C:\Program Files\Video\Caputure.exe を優先度高、カレントディレ
+        > startw -high -dd:\ "C:\Program Files\Video\Capture.exe"
+        　C:\Program Files\Video\Capture.exe を優先度高、カレントディレ
         クトリ d:\ で起動します。
 
         　ビデオキャプチャソフトや、CD-R ライティングソフトなど特定のプ
@@ -108,6 +116,12 @@
 
         [Autorun]
         open=startw.exe index.html
+
+      4. 環境変数を設定してコマンドを実行する例
+        > startw CHERE_INVOKING=yes c:\cygwin\bin\mintty -
+        　CHERE_INVOKING という環境変数に yes という値を設定して mintty
+        を起動することにより、カレントディレクトリから Cygwin (mintty)
+        が起動します。
 
 
 
@@ -149,6 +163,9 @@
         ・Unicode 版の実行ファイルを用意。
         ・Unicode 版でプロセスアフィニティマスクを設定できるように変更。
         ・avast! 6.0 が、安全でないアプリとして警告を出すのに対処した。
+
+    2011/11/25  Ver.1.08
+        ・環境変数を設定できるようにした。
 
 
 

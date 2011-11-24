@@ -7,18 +7,20 @@ CPP = $(CC)
 CFLAGS = /O1 /W3 /GF
 CPPFLAGS = $(CFLAGS) /MD
 LINK = link /nologo
+LDFLAGS = /opt:nowin98 /merge:.rdata=.text
 
 
 objs = startw.obj tnywmain.obj
 objsw = startww.obj tnywmainw.obj
+libs = kernel32.lib user32.lib shell32.lib shlwapi.lib
 
 all : startw.exe startw9x.exe
 
 startw.exe : $(objsw)
-	$(LINK) $** kernel32.lib user32.lib shell32.lib /out:$@ /opt:nowin98 /merge:.rdata=.text
+	$(LINK) $** $(libs) /out:$@ $(LDFLAGS)
 
 startw9x.exe : $(objs)
-	$(LINK) $** kernel32.lib user32.lib shell32.lib /out:$@ /opt:nowin98 /merge:.rdata=.text
+	$(LINK) $** $(libs) /out:$@ $(LDFLAGS)
 
 
 startw.obj : startw.cpp

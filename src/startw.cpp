@@ -1,10 +1,11 @@
 /*
- * startw  Ver.1.07   Copyright (C) 2005-2011  K.Takata
+ * startw  Ver.1.08   Copyright (C) 2005-2011  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include <shlwapi.h>
 #include <string.h>
 #include <stdlib.h>
 #include <tchar.h>
@@ -19,9 +20,11 @@
 #undef _tcscpy
 #undef _tcsicmp
 #undef _tcsncpy
+#undef _tcschr
 #define _tcscpy			lstrcpy
 #define _tcsicmp		lstrcmpi
 #define _tcsncpy(d,s,l)	lstrcpyn((d), (s), (l) + 1)
+#define _tcschr			StrChr
 #endif /* USE_STRING_API */
 
 #ifndef BELOW_NORMAL_PRIORITY_CLASS
@@ -30,7 +33,7 @@
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
 #define PROGNAME	"startw"
-#define COPYRIGHT_	"  Ver.1.07   Copyright (C) 2005-2011  K.Takata"
+#define COPYRIGHT_	"  Ver.1.08   Copyright (C) 2005-2011  K.Takata"
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
@@ -46,7 +49,7 @@ BOOL IsUserAdmin();
 int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		LPSTR lpCmdLine, int iCmdShow)
 {
-	LPTSTR p, q, path = NULL;
+	LPTSTR p, q, r, path = NULL;
 	TCHAR buf[MAX_PATH];
 	TCHAR arg[MAX_PATH];
 	DWORD dwCreationFlags = 0;
@@ -65,6 +68,14 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	while (p != NULL) {
 		LPTSTR opt = arg + 1;
 		q = getargs(p, arg, lengthof(arg), 0);
+		if ((r = _tcschr(arg, _T('='))) != NULL) {
+			*r = _T('\0');
+			if (r - arg > 0) {
+				SetEnvironmentVariable(arg, r + 1);
+			}
+			p = q;
+			continue;
+		}
 		if (arg[0] != _T('/') && arg[0] != _T('-')) {
 			break;
 		}
@@ -104,7 +115,8 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 #ifdef UNICODE
 		} else if (_tcsicmp(opt, _T("affinity")) == 0) {
 			p = q = getargs(q, NULL, 0, 0);
-			dwAffinity = _tcstoul(p, NULL, 0);
+			//dwAffinity = _tcstoul(p, NULL, 0);
+			StrToIntEx(p, STIF_SUPPORT_HEX, (int*) &dwAffinity);
 #endif
 		} else if (opt[0] == _T('d') || opt[0] == _T('D')) {
 			if (opt[1] == _T('\0')) {
@@ -193,7 +205,7 @@ void usage()
 	// use ANSI string to reduce the program size
 	LPSTR msg =
 		COPYRIGHT "\n\n"
-		"usage: " PROGNAME " [<option>] cmdline...\n"
+		"usage: " PROGNAME " [<option>] [<envname>=<value>] cmdline...\n"
 		" <option>\n"
 		"  -d<path>\t\tStarting directory\n"
 		"  -min\t\tStart window minimized\n"
