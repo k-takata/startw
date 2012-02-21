@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.08   Copyright (C) 2005-2011  K.Takata
+ * startw  Ver.1.09   Copyright (C) 2005-2012  K.Takata
  */
 
 #define WIN32_LEAN_AND_MEAN
@@ -33,7 +33,7 @@
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
 #define PROGNAME	"startw"
-#define COPYRIGHT_	"  Ver.1.08   Copyright (C) 2005-2011  K.Takata"
+#define COPYRIGHT_	"  Ver.1.09   Copyright (C) 2005-2012  K.Takata"
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
@@ -114,9 +114,9 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 			f_wait = 1;
 #ifdef UNICODE
 		} else if (_tcsicmp(opt, _T("affinity")) == 0) {
-			p = q = getargs(q, NULL, 0, 0);
 			//dwAffinity = _tcstoul(p, NULL, 0);
 			StrToIntEx(p, STIF_SUPPORT_HEX, (int*) &dwAffinity);
+			p = q = getargs(q, NULL, 0, 0);
 #endif
 		} else if (opt[0] == _T('d') || opt[0] == _T('D')) {
 			if (opt[1] == _T('\0')) {
