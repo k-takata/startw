@@ -47,7 +47,7 @@ BOOL IsUserAdmin();
  * WinMain
  */
 int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
-		LPSTR lpCmdLine, int iCmdShow)
+		LPTSTR lpCmdLine, int iCmdShow)
 {
 	LPTSTR p, q, r, path = NULL;
 	TCHAR buf[MAX_PATH];
