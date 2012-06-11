@@ -5,7 +5,7 @@
 CC = cl /nologo
 CPP = $(CC)
 CFLAGS = /O1 /W3 /GF
-CPPFLAGS = $(CFLAGS) /MD
+CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
 LDFLAGS = /opt:nowin98 /merge:.rdata=.text
 
@@ -17,7 +17,7 @@ libs = kernel32.lib user32.lib shell32.lib shlwapi.lib
 all : startw.exe startw9x.exe
 
 startw.exe : $(objsw)
-	$(LINK) $** $(libs) /out:$@ $(LDFLAGS)
+	$(LINK) $** $(libs) /out:$@ $(LDFLAGS) /stub:stub_60h.exe
 
 startw9x.exe : $(objs)
 	$(LINK) $** $(libs) /out:$@ $(LDFLAGS)
@@ -42,4 +42,14 @@ tnywmainw.obj : tnywmain.c
 clean :
 	del $(objs) $(objsw)
 	del startw.exe startw9x.exe
+
+
+
+#stub_40h.exe : stub_40h.asm
+#	lcc -o $@ -a $?
+#	stbhdr -d $@
+
+#stub_60h.exe : stub_60h.asm
+#	lcc -o $@ -a $?
+#	stbhdr -d $@
 
