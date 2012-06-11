@@ -1,0 +1,7 @@
+*		eol=crlf
+.gitattributes	text=auto -eol
+.gitignore	text=auto -eol
+*.exe		-text -eol
+
+*.c		whitespace=-blank-at-eol
+*.cpp		whitespace=-blank-at-eol
