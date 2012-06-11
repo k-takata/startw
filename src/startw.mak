@@ -11,7 +11,7 @@ LDFLAGS = /opt:nowin98 /merge:.rdata=.text
 
 
 objs = startw.obj tnywmain.obj
-objsw = startww.obj tnywmainw.obj
+objsw = startww.obj tnywmainw.obj startw.res
 libs = kernel32.lib user32.lib shell32.lib shlwapi.lib
 
 all : startw.exe startw9x.exe
@@ -27,6 +27,8 @@ startw.obj : startw.cpp
 
 startww.obj : startw.cpp
 	$(CC) /Fo$@ $(CPPFLAGS) /DUNICODE /D_UNICODE /c startw.cpp
+
+startw.res : startw.rc
 
 
 # /Zl : NODEFAULTLIB
