@@ -7,7 +7,20 @@ CPP = $(CC)
 CFLAGS = /O1 /W3 /GF
 CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
-LDFLAGS = /opt:nowin98 /merge:.rdata=.text
+LDFLAGS = /merge:.rdata=.text
+
+
+# Get the version of cl.exe.
+#  1. Write the version to a work file (mscver.~).
+!if [(echo _MSC_VER>mscver.c) && ($(CC) /EP mscver.c 2>nul > mscver.~)]
+!endif
+#  2. Command string to get the version.
+_MSC_VER = [for /f %i in (mscver.~) do @exit %i]
+
+
+!if $(_MSC_VER) < 1500
+LDFLAGS = $(LDFLAGS) /opt:nowin98
+!endif
 
 
 objs = startw.obj tnywmain.obj
@@ -53,3 +66,6 @@ clean :
 #	lcc -o $@ -a $?
 #	stbhdr -d $@
 
+# clean up
+!if [del mscver.~ mscver.c]
+!endif
