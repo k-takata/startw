@@ -1,8 +1,8 @@
 /*
- * startw  Ver.1.10
+ * startw  Ver.1.12
  */
 /*
- * Copyright (C) 2005-2012, K.Takata
+ * Copyright (C) 2005-2014, K.Takata
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
