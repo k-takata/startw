@@ -64,6 +64,8 @@
 
 
 LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote);
+LPTSTR getenvarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
+		LPTSTR val, size_t valsize);
 void usage();
 int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show);
 BOOL IsUserAdmin();
@@ -75,7 +77,7 @@ BOOL IsUserAdmin();
 int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		LPTSTR lpCmdLine, int iCmdShow)
 {
-	LPTSTR p, q, r, path = NULL;
+	LPTSTR p, q, path = NULL;
 	TCHAR buf[MAX_PATH];
 	TCHAR arg[MAX_PATH];
 	DWORD dwCreationFlags = 0;
@@ -94,12 +96,10 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	while (p != NULL) {
 		LPTSTR opt = arg + 1;
 		q = getargs(p, arg, lengthof(arg), 0);
-		if ((r = _tcschr(arg, _T('='))) != NULL) {
-			*r = _T('\0');
-			if (r - arg > 0) {
-				SetEnvironmentVariable(arg, r + 1);
-			}
-			p = q;
+		if (_tcschr(arg, _T('=')) != NULL) {
+			TCHAR val[MAX_PATH];
+			p = q = getenvarg(p, arg, lengthof(arg), val, lengthof(val));
+			SetEnvironmentVariable(arg, val[0] ? val : NULL);
 			continue;
 		}
 		if (arg[0] != _T('/') && arg[0] != _T('-')) {
@@ -295,6 +295,82 @@ LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote)
 		_tcsncpy(arg, (LPTSTR) start, len);
 #ifndef USE_STRING_API
 		arg[len] = _T('\0');
+#endif
+	}
+	while (*p && (*p <= _T(' ')))
+		++p;
+	if (*p == _T('\0'))
+		return NULL;
+	return (LPTSTR) p;
+}
+
+/*
+ * getenvarg
+ *
+ * 環境変数の引数を解析し、変数名を arg に、値を val にコピー。
+ * 次の引数へのポインタを返す。次の引数がないときは NULL を返す。
+ */
+LPTSTR getenvarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
+		LPTSTR val, size_t valsize)
+{
+	PTBYTE p = (PTBYTE) cmdline;
+	PTBYTE start, end;
+	TBYTE quote = _T('\0');
+	size_t len;
+	
+	start = p;
+	if (*p == _T('"') || *p == _T('\'')) {
+		quote = *p;
+		++p;
+		start = p;
+		while (*p && (*p != quote) && (*p != _T('=')))
+			++p;
+		end = p;
+		if (*p == quote) {
+			++p;
+			quote = _T('\0');
+		}
+	} else {
+		while (*p != _T('='))
+			++p;
+		end = p;
+	}
+	if (arg != NULL && argsize > 0) {
+		len = end - start;
+		if (len > argsize - 1)
+			len = argsize - 1;
+		_tcsncpy(arg, (LPTSTR) start, len);
+#ifndef USE_STRING_API
+		arg[len] = _T('\0');
+#endif
+	}
+	++p;		// skip '='
+	start = p;
+	if (quote == _T('\0') && (*p == _T('"') || *p == _T('\''))) {
+		quote = *p;
+		++p;
+		start = p;
+	}
+	if (quote != _T('\0')) {
+		while (*p && (*p != quote))
+			++p;
+		end = p;
+		if (*p == quote) {
+			++p;
+			quote = _T('\0');
+		}
+	} else {
+		while (*p > _T(' '))
+			++p;
+		end = p;
+	}
+	if (val != NULL && valsize > 0) {
+		len = end - start;
+		if (len > valsize - 1)
+			len = valsize - 1;
+		_tcsncpy(val, (LPTSTR) start, len);
+#ifndef USE_STRING_API
+		val[len] = _T('\0');
 #endif
 	}
 	while (*p && (*p <= _T(' ')))
