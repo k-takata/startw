@@ -11,11 +11,15 @@ LDFLAGS = /merge:.rdata=.text
 
 
 # Get the version of cl.exe.
-#  1. Write the version to a work file (mscver.~).
-!if [(echo _MSC_VER>mscver.c) && ($(CC) /EP mscver.c 2>nul > mscver.~)]
+#  1. Write the version to a work file (mscver$(_NMAKE_VER).~).
+!if ![(echo _MSC_VER>mscver$(_NMAKE_VER).c) && \
+	(for /f %I in ('"$(CC) /EP mscver$(_NMAKE_VER).c 2>nul"') do @echo _MSC_VER=%I> mscver$(_NMAKE_VER).~)]
+#  2. Include it.
+!include mscver$(_NMAKE_VER).~
+#  3. Clean up.
+!if [del mscver$(_NMAKE_VER).~ mscver$(_NMAKE_VER).c]
 !endif
-#  2. Command string to get the version.
-_MSC_VER = [for /f %i in (mscver.~) do @exit %i]
+!endif
 
 
 !if $(_MSC_VER) < 1500
@@ -65,7 +69,3 @@ clean :
 #stub_60h.exe : stub_60h.asm
 #	lcc -o $@ -a $?
 #	stbhdr -d $@
-
-# clean up
-!if [del mscver.~ mscver.c]
-!endif
