@@ -386,7 +386,7 @@ typedef BOOL (WINAPI *pfnIsUserAnAdmin)(void);
 BOOL IsUserAdmin()
 {
 //	HMODULE hShell32 = LoadLibrary(_T("shell32.dll"));
-	HMODULE hShell32 = GetModuleHandle(_T("shell32.dll"));
+	HMODULE hShell32 = GetModuleHandleA("shell32.dll");
 	if (hShell32 == NULL) {
 		return TRUE;
 	}
