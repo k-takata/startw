@@ -180,17 +180,21 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		CloseHandle(pi.hProcess);
 	}
 #else
-	SHELLEXECUTEINFO sei = {sizeof(SHELLEXECUTEINFO)};
+	SHELLEXECUTEINFO sei;
+	sei.cbSize = sizeof(SHELLEXECUTEINFO);
 	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+	sei.hwnd = NULL;
 //	sei.lpVerb = _T("open");
 	if (f_runas || (f_admin && !IsUserAdmin())) {
 		sei.lpVerb = _T("runas");
+	} else {
+		sei.lpVerb = NULL;
 	}
 	sei.lpFile = arg;
 	sei.lpParameters = q;
+	sei.lpDirectory = path;
 	sei.nShow = (si.dwFlags & STARTF_USESHOWWINDOW)
 			? si.wShowWindow : SW_SHOWDEFAULT;
-	sei.lpDirectory = path;
 	ret = ShellExecuteEx(&sei);
 	
 	if (ret && (sei.hProcess != NULL)) {
