@@ -24,6 +24,8 @@ LDFLAGS = /merge:.rdata=.text
 
 !if $(_MSC_VER) < 1500
 LDFLAGS = $(LDFLAGS) /opt:nowin98
+!else
+LDFLAGS = $(LDFLAGS) /dynamicbase:no
 !endif
 
 !if $(_MSC_VER) >= 1400
