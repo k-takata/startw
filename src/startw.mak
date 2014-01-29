@@ -4,7 +4,7 @@
 
 CC = cl /nologo
 CPP = $(CC)
-CFLAGS = /O1 /W3 /GF
+CFLAGS = /O1 /W3 /GF /FAsc
 CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
 LDFLAGS = /merge:.rdata=.text
