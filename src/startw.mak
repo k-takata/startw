@@ -26,6 +26,11 @@ LDFLAGS = /merge:.rdata=.text
 LDFLAGS = $(LDFLAGS) /opt:nowin98
 !endif
 
+!if $(_MSC_VER) >= 1400
+# Disable security checks to reduce the size.
+CFLAGS = $(CFLAGS) /GS-
+!endif
+
 
 objs = startw.obj tnywmain.obj
 objsw = startww.obj tnywmainw.obj startw.res
