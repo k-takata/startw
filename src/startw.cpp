@@ -63,9 +63,8 @@
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
-LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote);
-LPTSTR getenvarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
-		LPTSTR val, size_t valsize);
+LPTSTR getarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
+		LPTSTR val, size_t valsize, int *f_envfound);
 void usage();
 int ShowExitCode(HANDLE hProcess, LPCTSTR arg, int f_show);
 BOOL IsUserAdmin();
@@ -80,6 +79,7 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	LPTSTR p, q, path = NULL;
 	TCHAR buf[MAX_PATH];
 	TCHAR arg[MAX_PATH];
+	TCHAR val[MAX_PATH];
 	DWORD dwCreationFlags = 0;
 	DWORD dwAffinity = 0;
 	BOOL ret;
@@ -92,14 +92,14 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 	STARTUPINFO si;
 	GetStartupInfo(&si);
 	
-	p = getargs(GetCommandLine(), NULL, 0, 0);
+	p = getarg(GetCommandLine(), NULL, 0, NULL, 0, NULL);
 	while (p != NULL) {
 		LPTSTR opt = arg + 1;
-		q = getargs(p, arg, lengthof(arg), 0);
-		if (_tcschr(arg, _T('=')) != NULL) {
-			TCHAR val[MAX_PATH];
-			p = q = getenvarg(p, arg, lengthof(arg), val, lengthof(val));
+		int f_env;
+		q = getarg(p, arg, lengthof(arg), val, lengthof(val), &f_env);
+		if (f_env != NULL) {
 			SetEnvironmentVariable(arg, val[0] ? val : NULL);
+			p = q;
 			continue;
 		}
 		if (arg[0] != _T('/') && arg[0] != _T('-')) {
@@ -142,11 +142,11 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		} else if (_tcsicmp(opt, _T("affinity")) == 0) {
 			//dwAffinity = _tcstoul(p, NULL, 0);
 			StrToIntEx(p, STIF_SUPPORT_HEX, (int*) &dwAffinity);
-			p = q = getargs(q, NULL, 0, 0);
+			p = q = getarg(q, NULL, 0, NULL, 0, NULL);
 #endif
 		} else if (opt[0] == _T('d') || opt[0] == _T('D')) {
 			if (opt[1] == _T('\0')) {
-				p = q = getargs(q, buf, lengthof(buf), 0);
+				p = q = getarg(q, buf, lengthof(buf), NULL, 0, NULL);
 			} else {
 				_tcscpy(buf, opt + 1);
 			}
@@ -180,17 +180,21 @@ int WINAPI _tWinMain(HINSTANCE hCurInst, HINSTANCE hPrevInst,
 		CloseHandle(pi.hProcess);
 	}
 #else
-	SHELLEXECUTEINFO sei = {sizeof(SHELLEXECUTEINFO)};
+	SHELLEXECUTEINFO sei;
+	sei.cbSize = sizeof(SHELLEXECUTEINFO);
 	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+	sei.hwnd = NULL;
 //	sei.lpVerb = _T("open");
 	if (f_runas || (f_admin && !IsUserAdmin())) {
 		sei.lpVerb = _T("runas");
+	} else {
+		sei.lpVerb = NULL;
 	}
 	sei.lpFile = arg;
 	sei.lpParameters = q;
+	sei.lpDirectory = path;
 	sei.nShow = (si.dwFlags & STARTF_USESHOWWINDOW)
 			? si.wShowWindow : SW_SHOWDEFAULT;
-	sei.lpDirectory = path;
 	ret = ShellExecuteEx(&sei);
 	
 	if (ret && (sei.hProcess != NULL)) {
@@ -256,123 +260,59 @@ void usage()
 
 
 /*
- * getargs
+ * getarg
  *
- * 先頭の引数を arg にコピー。
- * f_quote が 0 以外なら引用符('"', '\'')を含めてコピー。
- * 次の引数へのポインタを返す。次の引数がないときは NULL を返す。
+ * Parse cmdline and copy the first argument to arg.
+ * If val is not NULL, parse ENVNAME=VALUE format then copy ENVNAME to arg,
+ * and VALUE to val. If the argument matches this format, *f_envfound is set
+ * to 1.
+ * Return a pointer to the next argument. Return NULL if there are no
+ * arguments left.
  */
-LPTSTR getargs(LPCTSTR cmdline, LPTSTR arg, size_t size, int f_quote)
+LPTSTR getarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
+		LPTSTR val, size_t valsize, int *f_envfound)
 {
 	PTBYTE p = (PTBYTE) cmdline;
-	PTBYTE start, end;
-	TBYTE quote;
-	size_t len;
-	
-	start = p;
-	if (*p == _T('"') || *p == _T('\'')) {
-		quote = *p;
-		++p;
-		if (!f_quote)
-			start = p;
-		while (*p && (*p != quote))
-			++p;
-		end = p;
-		if (*p == quote) {
-			++p;
-			if (f_quote)
-				end = p;
-		}
-	} else {
-		while (*p > _T(' '))
-			++p;
-		end = p;
-	}
-	if (arg != NULL && size > 0) {
-		len = end - start;
-		if (len > size - 1)
-			len = size - 1;
-		_tcsncpy(arg, (LPTSTR) start, len);
-#ifndef USE_STRING_API
-		arg[len] = _T('\0');
-#endif
-	}
-	while (*p && (*p <= _T(' ')))
-		++p;
-	if (*p == _T('\0'))
-		return NULL;
-	return (LPTSTR) p;
-}
-
-/*
- * getenvarg
- *
- * 環境変数の引数を解析し、変数名を arg に、値を val にコピー。
- * 次の引数へのポインタを返す。次の引数がないときは NULL を返す。
- */
-LPTSTR getenvarg(LPCTSTR cmdline, LPTSTR arg, size_t argsize,
-		LPTSTR val, size_t valsize)
-{
-	PTBYTE p = (PTBYTE) cmdline;
-	PTBYTE start, end;
+	PTBYTE q = (PTBYTE) arg;
+	PTBYTE argend = (q == NULL) ? NULL : (q + argsize);
+	BOOL envfound = val ? FALSE : TRUE;
 	TBYTE quote = _T('\0');
-	size_t len;
+	TBYTE c;
 	
-	start = p;
-	if (*p == _T('"') || *p == _T('\'')) {
-		quote = *p;
-		++p;
-		start = p;
-		while (*p && (*p != quote) && (*p != _T('=')))
-			++p;
-		end = p;
-		if (*p == quote) {
-			++p;
-			quote = _T('\0');
+	if (f_envfound)
+		*f_envfound = 0;
+	c = *p;
+	while (c > _T(' ') || (quote && c)) {
+		if (c == _T('"') || c == _T('\'')) {
+			if (c == quote) {
+				TBYTE oldquote = quote;
+				quote = _T('\0');
+				c = *++p;
+				if (c != oldquote)
+					continue;
+			} else if (!quote) {
+				quote = c;
+				c = *++p;
+				continue;
+			}
 		}
-	} else {
-		while (*p != _T('='))
-			++p;
-		end = p;
-	}
-	if (arg != NULL && argsize > 0) {
-		len = end - start;
-		if (len > argsize - 1)
-			len = argsize - 1;
-		_tcsncpy(arg, (LPTSTR) start, len);
-#ifndef USE_STRING_API
-		arg[len] = _T('\0');
-#endif
-	}
-	++p;		// skip '='
-	start = p;
-	if (quote == _T('\0') && (*p == _T('"') || *p == _T('\''))) {
-		quote = *p;
-		++p;
-		start = p;
-	}
-	if (quote != _T('\0')) {
-		while (*p && (*p != quote))
-			++p;
-		end = p;
-		if (*p == quote) {
-			++p;
-			quote = _T('\0');
+		if (c == _T('=') && !envfound) {
+			envfound = TRUE;
+			if (f_envfound)
+				*f_envfound = 1;
+			if (val) {
+				if (q && q < argend)
+					*q = _T('\0');
+				q = (PTBYTE) val;
+				argend = q + valsize;
+			}
+		} else if (q && q < argend - 1) {
+			*q++ = c;
 		}
-	} else {
-		while (*p > _T(' '))
-			++p;
-		end = p;
+		c = *++p;
 	}
-	if (val != NULL && valsize > 0) {
-		len = end - start;
-		if (len > valsize - 1)
-			len = valsize - 1;
-		_tcsncpy(val, (LPTSTR) start, len);
-#ifndef USE_STRING_API
-		val[len] = _T('\0');
-#endif
-	}
+	if (q && q < argend)
+		*q = _T('\0');
 	while (*p && (*p <= _T(' ')))
 		++p;
 	if (*p == _T('\0'))
@@ -386,7 +326,7 @@ typedef BOOL (WINAPI *pfnIsUserAnAdmin)(void);
 BOOL IsUserAdmin()
 {
 //	HMODULE hShell32 = LoadLibrary(_T("shell32.dll"));
-	HMODULE hShell32 = GetModuleHandle(_T("shell32.dll"));
+	HMODULE hShell32 = GetModuleHandleA("shell32.dll");
 	if (hShell32 == NULL) {
 		return TRUE;
 	}

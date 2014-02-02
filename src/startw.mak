@@ -4,7 +4,7 @@
 
 CC = cl /nologo
 CPP = $(CC)
-CFLAGS = /O1 /W3 /GF
+CFLAGS = /O1 /W3 /GF /FAsc
 CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
 LDFLAGS = /merge:.rdata=.text
@@ -24,6 +24,13 @@ LDFLAGS = /merge:.rdata=.text
 
 !if $(_MSC_VER) < 1500
 LDFLAGS = $(LDFLAGS) /opt:nowin98
+!else
+LDFLAGS = $(LDFLAGS) /dynamicbase:no
+!endif
+
+!if $(_MSC_VER) >= 1400
+# Disable security checks to reduce the size.
+CFLAGS = $(CFLAGS) /GS-
 !endif
 
 
@@ -41,9 +48,10 @@ startw9x.exe : $(objs)
 
 
 startw.obj : startw.cpp
+	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /c startw.cpp
 
 startww.obj : startw.cpp
-	$(CC) /Fo$@ $(CPPFLAGS) /DUNICODE /D_UNICODE /c startw.cpp
+	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /DUNICODE /D_UNICODE /c startw.cpp
 
 startw.res : startw.rc
 
