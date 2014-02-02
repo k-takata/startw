@@ -1,5 +1,5 @@
 /*
- * startw  Ver.1.11
+ * startw  Ver.1.12
  */
 /*
  * Copyright (C) 2005-2014, K.Takata
@@ -59,7 +59,7 @@
 #endif /* BELOW_NORMAL_PRIORITY_CLASS */
 
 #define PROGNAME	"startw"
-#define COPYRIGHT_	"  Ver.1.11   Copyright (C) 2005-2014  K.Takata"
+#define COPYRIGHT_	"  Ver.1.12   Copyright (C) 2005-2014  K.Takata"
 #define COPYRIGHT	PROGNAME COPYRIGHT_
 
 
