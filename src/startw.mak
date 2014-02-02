@@ -48,9 +48,10 @@ startw9x.exe : $(objs)
 
 
 startw.obj : startw.cpp
+	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /c startw.cpp
 
 startww.obj : startw.cpp
-	$(CC) /Fo$@ $(CPPFLAGS) /DUNICODE /D_UNICODE /c startw.cpp
+	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /DUNICODE /D_UNICODE /c startw.cpp
 
 startw.res : startw.rc
 
