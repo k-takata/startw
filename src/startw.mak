@@ -4,10 +4,20 @@
 
 CC = cl /nologo
 CPP = $(CC)
-CFLAGS = /O1 /W3 /GF /FAsc
+CFLAGS = /O1 /W3 /GF /FAsc /DUNICODE /D_UNICODE
 CPPFLAGS = $(CFLAGS)
 LINK = link /nologo
 LDFLAGS = /merge:.rdata=.text
+
+!ifndef TARGET_CPU
+!if ("$(CPU)"=="AMD64" && !DEFINED(386)) || DEFINED(AMD64) || "$(PLATFORM)"=="x64" || "$(PLATFORM)"=="X64"
+TARGET_CPU = x64
+!elseif DEFINED(IA64)
+TARGET_CPU = ia64
+!else
+TARGET_CPU = x86
+!endif
+!endif
 
 
 # Get the version of cl.exe.
@@ -33,40 +43,36 @@ LDFLAGS = $(LDFLAGS) /dynamicbase:no
 CFLAGS = $(CFLAGS) /GS-
 !endif
 
+OBJDIR = obj$(TARGET_CPU)
 
-objs = startw.obj tnywmain.obj
-objsw = startww.obj tnywmainw.obj startw.res
+
+objs = $(OBJDIR)\startw.obj $(OBJDIR)\tnywmain.obj $(OBJDIR)\startw.res
 libs = kernel32.lib user32.lib shell32.lib shlwapi.lib
 
-all : startw.exe startw9x.exe
+all: $(OBJDIR)\startw.exe
 
-startw.exe : $(objsw)
-	$(LINK) $** $(libs) /out:$@ $(LDFLAGS) /stub:stub_60h.exe
+$(OBJDIR):
+	if not exist $(OBJDIR)\nul mkdir $(OBJDIR)
 
-startw9x.exe : $(objs)
-	$(LINK) $** $(libs) /out:$@ $(LDFLAGS)
+$(OBJDIR)\startw.exe: $(OBJDIR) $(objs)
+	$(LINK) $(objs) $(libs) /out:$@ $(LDFLAGS) /stub:stub_60h.exe
 
 
-startw.obj : startw.cpp
+$(OBJDIR)\startw.obj: startw.cpp
 	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /c startw.cpp
 
-startww.obj : startw.cpp
-	$(CC) /Fo$@ $(CPPFLAGS) /Fa$*.cod /DUNICODE /D_UNICODE /c startw.cpp
-
-startw.res : startw.rc
+$(OBJDIR)\startw.res: startw.rc
+	$(RC) /Fo$@ startw.rc
 
 
 # /Zl : NODEFAULTLIB
-tnywmain.obj : tnywmain.c
-	$(CC) $(CFLAGS) /Zl /c $*.c
-
-tnywmainw.obj : tnywmain.c
-	$(CC) /Fo$@ $(CFLAGS) /DUNICODE /D_UNICODE /Zl /c tnywmain.c
+$(OBJDIR)\tnywmain.obj: tnywmain.c
+	$(CC) /Fo$@ $(CFLAGS) /Fa$*.cod /Zl /c tnywmain.c
 
 
-clean :
-	del $(objs) $(objsw)
-	del startw.exe startw9x.exe
+clean:
+	del $(objs)
+	del $(OBJDIR)\startw.exe
 
 
 
