@@ -1,0 +1,181 @@
+.e
+.w72
+.nz
+.t8
+.kd/ヽヾーァィゥェォッャュョヮヵヶゝゞぁぃぅぇぉっゃゅょゃゎ々
+
+.[ ai
+
+~>startw  Ver.1.12  Copyright (C) 2005-2014  K.Takata~<
+
+
+１．概要
+    　ファイルやコマンドの実行や、優先度の設定を行います。
+    　Windows 標準の start コマンドとほぼ同じ働きをします。異なる点は、startw はコンソールプログラムではないという点です。そのため、startw を実行しても、DOS 窓（コマンドプロンプト）が一瞬開くということがありません。
+    　CD-ROM の autorun.inf に指定することで、CD-ROM の自動起動プログラムとして使うこともできます。
+    　同種のソフトには、execute (*1), shexe (*2) をはじめとして、多くのソフトが存在しますが、startw は優先度や環境変数の設定ができるという点が大きな特徴です。
+    　実行ファイルのサイズはおよそ 4KiB と非常にコンパクトになっています。
+
+    (*1) http://hp.vector.co.jp/authors/VA016050/download.html
+    (*2) http://hp.vector.co.jp/authors/VA004101/shex/shexexe.htm
+
+
+
+２．動作環境
+    ・startw.exe (Unicode 版)
+	・Windows2000/XP/Vista/7 など
+
+    ・startw9x.exe (ANSI 版)
+	適宜実行ファイル名を startw.exe にリネームしてお使いください。
+	・Windows98/2000/XP/Vista/7 など
+
+
+
+３．使用方法
+    　コマンドライン書式は以下のようになっています。
+
+	> startw [<option>] [<envname>=<value>] cmdline...
+	 <option>
+	  -d<path>      カレントディレクトリの指定
+	  -min          最小化して起動
+	  -max          最大化して起動
+	  -hide         ウィンドウを隠して起動
+	  -realtime     優先度を REALTIME で起動
+	  -high         優先度を HIGH で起動
+	  -abovenormal  優先度を ABOVE_NORMAL で起動
+	  -normal       優先度を NORMAL で起動
+	  -belownormal  優先度を BELOW_NORMAL で起動
+	  -low, -idle   優先度を IDLE で起動
+	  -wait         起動したプログラムの終了を待つ
+	  -z            起動したプログラムの終了コードを表示する
+	  -admin        管理者権限で起動
+	  -affinity <n> プロセスアフィニティマスクを設定する
+
+    　オプションの大文字小文字は区別しません。
+
+    　Win9x では、-abovenormal, -belownormal, -admin, -affinity は使用できません。
+
+    　NT 系では、タスクマネージャの「プロセス」タブでプロセスの優先度が設定できますが、startw を使えば起動時に優先度を設定することができます。タスクマネージャでの指定と、startw による指定の対応関係は次のようになっています。
+
+	リアルタイム	-realtime
+	高		-high
+	通常以上	-abovenormal
+	通常		-normal
+	通常以下	-belownormal
+	低		-low, -idle
+
+    　-wait を指定すると、startw は、起動したプログラムが終了するまで待ちます。起動したプログラムの終了を待ってから何か作業をしたい場合などに指定してください。
+    　-wait 指定時には、Ver.1.04 からは、起動したプログラムの終了コードを取得し、それを startw 自身の終了コードとするようになりました。
+
+    　-z を指定すると、自動的に -wait も一緒に指定されたことになります。
+
+    　-admin を指定すると、現在管理者権限がない場合、Vista では権限昇格確認のダイアログが表示され、管理者権限でプログラムを実行できます。2k/XP などでは、「別のユーザーとして実行」ダイアログが表示されます。
+
+    　<envname>=<value> を指定すると、<envname> という名前の環境変数に <value> という値を設定します。<value> に空白を含む場合は、<envname>=<value> 自体または <value> の部分をダブルクォーテーションマークまたはシングルクォーテーションマークでくくってください。<value> の部分を省略すると、<envname> という環境変数は削除されます。
+
+    　ダブルクォーテーションマークの解釈は、CommandLineToArgvW API や VC++ のスタートアップルーチンとほぼ同様です。クォーテーションは " で開始し、" または "" で終了します。"" で終了した場合は、" が文字列に含まれます。クォーテーション終了直後の文字が空白であれば引数は分割されますが、空白以外であればそのまま連結されます。
+    　startw では、シングルクォーテーションマークでもくくることができるように拡張されています。一方、\ で " をエスケープすることは（現バージョンでは）できません。
+
+      例:
+	"foo"		-> [foo]
+	"foo""		-> [foo"]
+	"foo"bar	-> [foobar]
+	"foo"'bar'	-> [foobar]  (startw 独自)
+	"foo" bar	-> [foo], [bar]
+	"foo""bar	-> [foo"bar]
+	"foo"""bar"	-> [foo"bar]
+	"foo"" bar	-> [foo"], [bar]
+
+    　NT 系の start コマンドの /B, /I, /SEPARATE, /SHARED に相当する機能や、タイトルを指定する機能は実装されていません。
+
+
+    使用例）
+      1. コマンドの実行例
+	> startw -high -dd:\ "C:\Program Files\Video\Capture.exe"
+	　C:\Program Files\Video\Capture.exe を優先度高、カレントディレクトリ d:\ で起動します。
+
+        　ビデオキャプチャソフトや、CD-R ライティングソフトなど特定のプログラムを常に優先度高で起動したいというような場合には、それらのプログラムを起動するショートカットを変更して、上記のように「リンク先」の先頭に startw -high を書き加えておくとよいでしょう。こうすると毎回タスクマネージャでプロセスの優先度を変更する必要がなくなり便利です。
+
+      2. 関連付けの実行例
+	> startw index.html
+	　index.html が、拡張子 .html に関連付けられたアプリで開かれます。
+
+      3. CD-ROM の自動実行の例
+	　以下の内容を autorun.inf という名前で保存し、CD-ROM の中に autorun.inf, startw.exe, index.html を入れておくと、CD-ROM を挿入したときに index.html が自動で開かれます。
+
+	[Autorun]
+	open=startw.exe index.html
+
+      4. 環境変数を設定してコマンドを実行する例
+	> startw CHERE_INVOKING=yes c:\cygwin\bin\mintty -
+	　CHERE_INVOKING という環境変数に yes という値を設定して mintty を起動することにより、カレントディレクトリから Cygwin (mintty) が起動します。
+
+
+
+４．コンパイル
+    　コンパイラは VC++ 6.0 以降が使用できます。コマンドラインから
+      > nmake -f startw.mak
+    　とするとコンパイルできます。
+
+
+
+５．更新履歴
+    2005/04/01	Ver.1.00
+	・最初の公開バージョン。
+
+    2005/04/04	Ver.1.01
+	・細かい修正。
+
+    2005/04/05	Ver.1.02
+	・終了コードを表示できるようにした。
+
+    2005/04/08	Ver.1.03
+	・-hide オプションを追加。
+
+    2005/11/14	Ver.1.04
+	・-wait オプションを強化。
+	・ドキュメントのタイプミスを修正。
+
+    2007/05/06	Ver.1.05
+	・-admin オプションを追加。
+	・Vista 対応。
+	・ソースレベルで Unicode に対応。（同梱の実行ファイルは ANSI 版）
+
+    2007/05/06	Ver.1.06
+	・2k/XP などで、既に管理者権限がある場合、-admin オプションを指定しても、「別のユーザーとして実行」ダイアログを表示しないように変更。
+
+    2011/05/28	Ver.1.07
+	・Unicode 版の実行ファイルを用意。
+	・Unicode 版でプロセスアフィニティマスクを設定できるように変更。
+	・avast! 6.0 が、安全でないアプリとして警告を出すのに対処した。
+
+    2011/11/25	Ver.1.08
+	・環境変数を設定できるようにした。
+
+    2012/02/22	Ver.1.09
+	・Unicode 版のプロセスアフィニティマスク設定機能が正しく動作していなかったのを修正。
+
+    2012/06/18	Ver.1.10
+	・Windows 7 でヘルプメッセージの表示がずれていたのを修正。
+	・ヘルプメッセージのビジュアルスタイルを有効化。（Unicode 版）
+	・ファイルサイズの増加を抑えるため、スタブファイルを差し替え。
+	・ライセンスを、独自ライセンスから BSD ライセンスに変更。
+
+    2014/01/26	Ver.1.11
+	・<envname>="<value>" 形式で環境変数を指定できるように改善。
+	・<value> を省略したときに、環境変数を削除するように変更。
+
+    2014/02/02	Ver.1.12
+	・ダブルクォーテーションマークを CommandLineToArgvW API や VC++ とほぼ同様に解釈するように改善。
+
+
+
+６．注意事項、その他
+    ・このプログラムは BSD ライセンスに従って利用することができます。詳細は同梱の bsd_license.txt を参照してください。
+    ・このプログラムの著作権は作者である私 K.Takata（高田 謙）に帰属します。
+
+	作者   : K.Takata（高田 謙）
+	URL    : http://webs.to/ken/
+	         http://homepage3.nifty.com/k-takata/
+	         https://github.com/k-takata/startw
+.]
