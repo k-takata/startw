@@ -6,7 +6,7 @@
 
 .[ ai
 
-~>startw  Ver.1.12  Copyright (C) 2005-2014  K.Takata~<
+~>startw  Ver.1.13  Copyright (C) 2005-2017  K.Takata~<
 
 
 １．概要
@@ -22,12 +22,11 @@
 
 
 ２．動作環境
-    ・startw.exe (Unicode 版)
-	・Windows2000/XP/Vista/7 など
+    ・startw.exe (Unicode/32bit 版)
+	・32bit版/64bit版 Windows XP/Vista/7/8/10 など
 
-    ・startw9x.exe (ANSI 版)
-	適宜実行ファイル名を startw.exe にリネームしてお使いください。
-	・Windows98/2000/XP/Vista/7 など
+    ・startw64.exe (Unicode/64bit 版)
+	・64bit版 Windows XP/Vista/7/8/10 など
 
 
 
@@ -53,9 +52,7 @@
 
     　オプションの大文字小文字は区別しません。
 
-    　Win9x では、-abovenormal, -belownormal, -admin, -affinity は使用できません。
-
-    　NT 系では、タスクマネージャの「プロセス」タブでプロセスの優先度が設定できますが、startw を使えば起動時に優先度を設定することができます。タスクマネージャでの指定と、startw による指定の対応関係は次のようになっています。
+    　タスクマネージャの「詳細」タブ（Windows のバージョンによっては「プロセス」タブ）を使うとプロセスの優先度が設定できますが、startw を使えば起動時に優先度を設定することができます。タスクマネージャでの指定と、startw による指定の対応関係は次のようになっています。
 
 	リアルタイム	-realtime
 	高		-high
@@ -69,7 +66,7 @@
 
     　-z を指定すると、自動的に -wait も一緒に指定されたことになります。
 
-    　-admin を指定すると、現在管理者権限がない場合、Vista では権限昇格確認のダイアログが表示され、管理者権限でプログラムを実行できます。2k/XP などでは、「別のユーザーとして実行」ダイアログが表示されます。
+    　-admin を指定すると、現在管理者権限がない場合、Vista 以降では権限昇格確認のダイアログが表示され、管理者権限でプログラムを実行できます。XP では、「別のユーザーとして実行」ダイアログが表示されます。
 
     　<envname>=<value> を指定すると、<envname> という名前の環境変数に <value> という値を設定します。<value> に空白を含む場合は、<envname>=<value> 自体または <value> の部分をダブルクォーテーションマークまたはシングルクォーテーションマークでくくってください。<value> の部分を省略すると、<envname> という環境変数は削除されます。
 
@@ -168,6 +165,11 @@
     2014/02/02	Ver.1.12
 	・ダブルクォーテーションマークを CommandLineToArgvW API や VC++ とほぼ同様に解釈するように改善。
 
+    2017/11/20	Ver.1.13
+	・64bit 版を用意。
+	・ANSI 版を削除。
+	・Windows 2000 以前のサポートを終了。
+
 
 
 ６．注意事項、その他
@@ -175,7 +177,6 @@
     ・このプログラムの著作権は作者である私 K.Takata（高田 謙）に帰属します。
 
 	作者   : K.Takata（高田 謙）
-	URL    : http://webs.to/ken/
-	         http://homepage3.nifty.com/k-takata/
+	URL    : http://k-takata.o.oo7.jp/
 	         https://github.com/k-takata/startw
 .]
