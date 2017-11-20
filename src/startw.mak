@@ -19,6 +19,12 @@ TARGET_CPU = x86
 !endif
 !endif
 
+!if "$(TARGET_CPU)"=="x86"
+EXE_NAME = startw.exe
+!else
+EXE_NAME = startw64.exe
+!endif
+
 
 # Get the version of cl.exe.
 #  1. Write the version to a work file (mscver$(_NMAKE_VER).~).
@@ -49,12 +55,12 @@ OBJDIR = obj$(TARGET_CPU)
 objs = $(OBJDIR)\startw.obj $(OBJDIR)\tnywmain.obj $(OBJDIR)\startw.res
 libs = kernel32.lib user32.lib shell32.lib shlwapi.lib
 
-all: $(OBJDIR)\startw.exe
+all: $(OBJDIR)\$(EXE_NAME)
 
 $(OBJDIR):
 	if not exist $(OBJDIR)\nul mkdir $(OBJDIR)
 
-$(OBJDIR)\startw.exe: $(OBJDIR) $(objs)
+$(OBJDIR)\$(EXE_NAME): $(OBJDIR) $(objs)
 	$(LINK) $(objs) $(libs) /out:$@ $(LDFLAGS) /stub:stub_60h.exe
 
 
@@ -72,7 +78,7 @@ $(OBJDIR)\tnywmain.obj: tnywmain.c
 
 clean:
 	del $(objs)
-	del $(OBJDIR)\startw.exe
+	del $(OBJDIR)\startw*.exe
 
 
 
